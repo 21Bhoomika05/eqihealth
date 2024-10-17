@@ -33,10 +33,9 @@ def categorize_value(metric, value):
     low, medium = RANGES.get(metric, [0, 0])
     if value <= low:
         return 'low'
-    elif value <= medium:
+    if value <= medium:
         return 'medium'
-    else:
-        return 'high'
+    return 'high'
 
 # Route to load CSV data into the database
 @app.route('/load-csv', methods=['GET'])
