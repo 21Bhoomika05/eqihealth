@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Data Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map {
+            width: 100%;
+            height: 400px;
+        }
+        .charts-container {
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome, {{ user.username }}</h1>
+        <nav>
+            <a href="{{ url_for('main.profile') }}">Profile</a>
+            <a href="{{ url_for('main.logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h2>Health Dashboard</h2>
+
+        <!-- Filter Form -->
+        <form id="filterForm" method="POST" action="{{ url_for('main.dashboard') }}">
+            <div class="filter-group">
+                <label for="state">State:</label>
+                <select name="state" id="state">
+                    <option value="">Select State</option>
+                    {% for state in states %}
+                    <option value="{{ state[0] }}">{{ state[0] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="district">District:</label>
+                <select name="district" id="district">
+                    <option value="">Select District</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="metric">Metric:</label>
+                <select name="metric" id="metric">
+                    <option value="">Select Metric</option>
+                    <option value="tb_incidence">TB Incidence</option>
+                    <option value="diabetes">Diabetes (%)</option>
+                    <option value="malaria_incidence">Malaria Incidence</option>
+                    <option value="hiv_aids">HIV/AIDS (%)</option>
+                    <option value="imr">IMR (Infant Mortality Rate)</option>
+                    <option value="vaccination">Vaccination (%)</option>
+                    <option value="income">Income (INR)</option>
+                    <option value="employment_rate">Employment Rate (%)</option>
+                    <option value="education">Education (%)</option>
+                    <option value="housing">Housing (%)</option>
+                    <option value="urbanization">Urbanization (%)</option>
+                    <option value="aqi">AQI (Air Quality Index)</option>
+                    <option value="annual_rainfall">Annual Rainfall (mm)</option>
+                </select>
+            </div>
+
+            <button type="submit">Apply Filters</button>
+        </form>
+
+        <div class="download-buttons">
+            <button type="button" id="download-csv">Download CSV</button>
+            <button type="button" id="download-pdf">Download PDF</button>
+        </div>
+
+        <h3>Filtered Health Data</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>State</th>
+                    <th>District</th>
+                    <th>TB Incidence</th>
+                    <th>Diabetes</th>
+                    <th>Malaria Incidence</th>
+                    <th>HIV/AIDS</th>
+                    <th>IMR</th>
+                    <th>Vaccination</th>
+                    <th>Income</th>
+                    <th>Employment Rate</th>
+                    <th>Education</th>
+                    <th>Housing</th>
+                    <th>Urbanization</th>
+                    <th>AQI</th>
+                    <th>Annual Rainfall</th>
+                    <th>Healthcare Access</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr>
+                    <td>{{ row.state }}</td>
+                    <td>{{ row.district }}</td>
+                    <td>{{ row.tb_incidence }}</td>
+                    <td>{{ row.diabetes }}</td>
+                    <td>{{ row.malaria_incidence }}</td>
+                    <td>{{ row.hiv_aids }}</td>
+                    <td>{{ row.imr }}</td>
+                    <td>{{ row.vaccination }}</td>
+                    <td>{{ row.income }}</td>
+                    <td>{{ row.employment_rate }}</td>
+                    <td>{{ row.education }}</td>
+                    <td>{{ row.housing }}</td>
+                    <td>{{ row.urbanization }}</td>
+                    <td>{{ row.aqi }}</td>
+                    <td>{{ row.annual_rainfall }}</td>
+                    <td>{{ row.healthcare_access }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Container for charts -->
+        <div class="charts-container">
+            <canvas id="healthPieChart" width="400" height="200"></canvas>
+            <canvas id="healthBarChart" width="400" height="200"></canvas>
+        </div>
+
+        <!-- Map for healthcare access visualization -->
+        <div id="map"></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#state').change(function() {
+                const state = $(this).val();
+                if (state) {
+                    $.get('/get_districts', { state: state }, function(data) {
+                        let districtOptions = '<option value="">Select District</option>';
+                        data.forEach(function(district) {
+                            districtOptions += `<option value="${district}">${district}</option>`;
+                        });
+                        $('#district').html(districtOptions);
+                    }).fail(function() {
+                        console.error("Failed to fetch districts.");
+                    });
+                } else {
+                    $('#district').html('<option value="">Select District</option>');
+                }
+            });
+
+            $('#download-csv').click(function() {
+                window.location.href = '/download_csv';
+            });
+
+            $('#download-pdf').click(function() {
+                window.location.href = '/download_pdf';
+            });
+
+            const ranges = {
+                tb_incidence: { low: [1.70, 328.13], medium: [328.14, 654.57], high: [654.58, 981.00] },
+                diabetes: { low: [1.50, 9.29], medium: [9.30, 17.09], high: [17.10, 24.88] },
+                malaria_incidence: { low: [0.10, 166.40], medium: [166.41, 332.70], high: [332.71, 499.00] },
+                hiv_aids: { low: [0.10, 16.73], medium: [16.74, 33.37], high: [33.38, 50.00] },
+                imr: { low: [0.01, 82.01], medium: [82.02, 164.00], high: [164.01, 246.00] },
+                vaccination: { low: [30.00, 53.33], medium: [53.34, 76.67], high: [76.68, 100.00] },
+                income: { low: [1, 66245], medium: [66246, 132489], high: [132490, 198733] },
+                employment_rate: { low: [2.00, 16394], medium: [16395, 32786], high: [32787, 49178] },
+                education: { low: [0.50, 33.58], medium: [33.59, 66.65], high: [66.66, 99.73] },
+                housing: { low: [2.00, 32.93], medium: [32.94, 63.86], high: [63.87, 94.79] },
+                urbanization: { low: [2.00, 34.67], medium: [34.68, 67.33], high: [67.34, 100.00] },
+                aqi: { low: [10.00, 106.00], medium: [106.01, 202.00], high: [202.01, 298.00] },
+                annual_rainfall: { low: [65.00, 1620.04], medium: [1620.05, 3175.07], high: [3175.08, 4730.11] }
+            };
+
+            function getCategory(value, ranges) {
+                if (value >= ranges.low[0] && value <= ranges.low[1]) return 'Low';
+                if (value >= ranges.medium[0] && value <= ranges.medium[1]) return 'Medium';
+                if (value >= ranges.high[0] && value <= ranges.high[1]) return 'High';
+                return null;
+            }
+
+            const selectedMetric = "{{ selected_metric }}";
+            const healthData = { health_data };
+            const pieData = { Low: 0, Medium: 0, High: 0 };
+            const chartLabels = [];
+            const selectedData = [];
+
+            healthData.forEach(record => {
+                const value = record[selectedMetric];
+                const category = getCategory(value, ranges[selectedMetric]);
+                if (category) {
+                    pieData[category]++;
+                    chartLabels.push(record.district);
+                    selectedData.push(value);
+                }
+            });
+
+            // Log data for debugging
+            console.log("Pie Data:", pieData);
+            console.log("Chart Labels:", chartLabels);
+            console.log("Selected Data:", selectedData);
+
+            // Chart.js - Pie Chart
+            if (healthData.length > 0) {
+                const ctxPie = document.getElementById('healthPieChart').getContext('2d');
+                const healthPieChart = new Chart(ctxPie, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Low', 'Medium', 'High'],
+                        datasets: [{
+                            data: [pieData.Low, pieData.Medium, pieData.High],
+                            backgroundColor: ['#36A2EB', '#FFCE56', '#FF6384']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Health Data Distribution'
+                            }
+                        }
+                    }
+                });
+
+                // Chart.js - Bar Chart
+                const ctxBar = document.getElementById('healthBarChart').getContext('2d');
+                const healthBarChart = new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: selectedMetric,
+                            data: selectedData,
+                            backgroundColor: '#FF6384'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            } else {
+                console.error("No health data available to render charts.");
+            }
+
+            // Initialize the Leaflet map
+            const map = L.map('map').setView([20.5937, 78.9629], 5); // Set to India
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // Sample markers (replace with actual data as needed)
+            healthData.forEach(record => {
+                L.marker([record.latitude, record.longitude]).addTo(map)
+                    .bindPopup(`<b>${record.district}</b><br>${selectedMetric}: ${record[selectedMetric]}`);
+            });
+        });
+    </script>
+</body>
+</html>

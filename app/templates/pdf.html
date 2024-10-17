@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Report</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Health Report</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>State</th>
+                <th>District</th>
+                <th>TB Incidence</th>
+                <th>Diabetes</th>
+                <th>Malaria Incidence</th>
+                <th>HIV/AIDS</th>
+                <th>IMR</th>
+                <th>Vaccination</th>
+                <th>Income</th>
+                <th>Employment Rate</th>
+                <th>Education</th>
+                <th>Housing</th>
+                <th>Urbanization</th>
+                <th>AQI</th>
+                <th>Annual Rainfall</th>
+                <th>Healthcare Access</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                <td>{{ row.state }}</td>
+                <td>{{ row.district }}</td>
+                <td>{{ row.tb_incidence }}</td>
+                <td>{{ row.diabetes }}</td>
+                <td>{{ row.malaria_incidence }}</td>
+                <td>{{ row.hiv_aids }}</td>
+                <td>{{ row.imr }}</td>
+                <td>{{ row.vaccination }}</td>
+                <td>{{ row.income }}</td>
+                <td>{{ row.employment_rate }}</td>
+                <td>{{ row.education }}</td>
+                <td>{{ row.housing }}</td>
+                <td>{{ row.urbanization }}</td>
+                <td>{{ row.aqi }}</td>
+                <td>{{ row.annual_rainfall }}</td>
+                <td>{{ row.healthcare_access }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
