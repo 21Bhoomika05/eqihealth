@@ -4,7 +4,7 @@ from . import db
 
 def load_data_from_csv(csv_file):
     data = pd.read_csv(csv_file)
-    
+
     for index, row in data.iterrows():
         health_data = HealthData(
             state=row['State'],
