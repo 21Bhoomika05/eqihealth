@@ -28,7 +28,7 @@ def create_app():
     from .auth import auth_bp  
     app.register_blueprint(auth_bp)  
 
-    
+
     with app.app_context():
         from .models import User, HealthData 
         db.create_all()  

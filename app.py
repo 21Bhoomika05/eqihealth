@@ -106,7 +106,7 @@ def filter_map_data():
 
     # Convert to dictionary format for JSON response
     result = map_data.to_dict(orient='records')
-    
+
     return jsonify({'data': result})
 
 # Route to download CSV report
@@ -132,10 +132,10 @@ def download_report():
         'annual_rainfall': request.args.get('annual_rainfall'),
         'healthcare_access': request.args.get('healthcare_access')
     }
-    
+
     # Filter the HealthData based on filters
     filtered_data = HealthData.query  # Start with all data
-    
+
     if filters['state']:
         filtered_data = filtered_data.filter(HealthData.state == filters['state'])
     if filters['district']:
@@ -178,7 +178,7 @@ def download_report():
                        row.hiv_aids, row.imr, row.vaccination, row.income, row.employment_rate,
                        row.education, row.housing, row.urbanization, row.aqi, row.annual_rainfall,
                        row.healthcare_access])
-    
+
     output_df = pd.DataFrame(output, columns=['State', 'District', 'TB Incidence', 'Diabetes', 
                                                'Malaria Incidence', 'HIV/AIDS', 'IMR', 'Vaccination',
                                                'Income', 'Employment Rate', 'Education', 'Housing',
@@ -188,7 +188,7 @@ def download_report():
     response = make_response(output_df.to_csv(index=False))
     response.headers["Content-Disposition"] = "attachment; filename=health_report.csv"
     response.headers["Content-type"] = "text/csv"
-    
+
     return response  # Returns the CSV file to download
 
 # Route to download PDF report
@@ -214,10 +214,10 @@ def download_report_pdf():
         'annual_rainfall': request.args.get('annual_rainfall'),
         'healthcare_access': request.args.get('healthcare_access')
     }
-    
+
     # Filter the HealthData based on filters
     filtered_data = HealthData.query  # Start with all data
-    
+
     if filters['state']:
         filtered_data = filtered_data.filter(HealthData.state == filters['state'])
     if filters['district']:
@@ -290,7 +290,7 @@ def download_report_pdf():
     response = make_response(pdf.output(dest='S').encode('latin1'))
     response.headers["Content-Disposition"] = "attachment; filename=health_report.pdf"
     response.headers["Content-type"] = "application/pdf"
-    
+
     return response  # Returns the PDF file to download
 
 # Route to handle resources
