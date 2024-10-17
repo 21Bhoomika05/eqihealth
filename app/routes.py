@@ -84,8 +84,7 @@ def login():
         if user and check_password_hash(user.password, password):
             login_user(user)
             return redirect(url_for('main.dashboard'))
-        else:
-            flash('Login failed. Check your email and password.')
+        flash('Login failed. Check your email and password.')
     return render_template('login.html')
 
 @main_bp.route('/signup', methods=['GET', 'POST'])
